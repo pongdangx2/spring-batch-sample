@@ -26,10 +26,18 @@ public class BillingJob implements Job {
 
     @Override
     public void execute(JobExecution execution) {
-        System.out.println("processing billing information");
-        // Job status 와 exit code를 변경해줘야 한다.
-        execution.setStatus(BatchStatus.COMPLETED);
-        execution.setExitStatus(ExitStatus.COMPLETED);
-        this.jobRepository.update(execution);
+        // execute() 에서는 예외를 던지면 안되기 때문에, 모든 예외는 무조건 처리되어야 합니다.
+        try{
+            System.out.println("processing billing information");
+//            throw new Exception("Unable to process billing information");
+            execution.setStatus(BatchStatus.COMPLETED);
+            execution.setExitStatus(ExitStatus.COMPLETED);
+        } catch (Exception exception){
+            execution.addFailureException(exception);
+            execution.setStatus(BatchStatus.COMPLETED);
+            execution.setExitStatus(ExitStatus.FAILED.addExitDescription(exception.getMessage()));
+        } finally{
+            this.jobRepository.update(execution);
+        }
     }
 }
