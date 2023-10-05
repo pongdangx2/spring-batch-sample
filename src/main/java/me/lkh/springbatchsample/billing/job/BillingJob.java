@@ -1,9 +1,6 @@
 package me.lkh.springbatchsample.billing.job;
 
-import org.springframework.batch.core.BatchStatus;
-import org.springframework.batch.core.ExitStatus;
-import org.springframework.batch.core.Job;
-import org.springframework.batch.core.JobExecution;
+import org.springframework.batch.core.*;
 import org.springframework.batch.core.repository.JobRepository;
 
 /**
@@ -24,6 +21,8 @@ public class BillingJob implements Job {
         return "billing-job";
     }
 
+    /*
+    // 1. Job and Job Execution
     @Override
     public void execute(JobExecution execution) {
         // execute() 에서는 예외를 던지면 안되기 때문에, 모든 예외는 무조건 처리되어야 합니다.
@@ -39,5 +38,27 @@ public class BillingJob implements Job {
         } finally{
             this.jobRepository.update(execution);
         }
+    }
+     */
+
+    // 2. Job Instance and Job Parameter
+    //    1) $ ./mvnw package -Dmaven.test.skip=true
+    //    2) $ java -jar target/spring-batch-sample-0.0.1-SNAPSHOT.jar input.file=src/main/resources/test-file.csv
+    //      --> processing billing information from file src/main/resources/test-file.csv 출력
+    //    3) select * from BATCH_JOB_INSTANCE; 로 Job Instance 메타데이터 조회
+    //      --> JOB_KEY 컬럼: identifying Job Parameter 의 Hash 값
+    //    4) 성공한 Job parameter 로 또다시 실행하면 Job Execution이 생기지 않고 IllegalStateException이 발생합니다.
+    //       즉, 같은 명령어
+    //          $ java -jar target/spring-batch-sample-0.0.1-SNAPSHOT.jar input.file=src/main/resources/test-file.csv
+    //       를 또다시 실행하면 IllegalStateException이 발생합니다.
+
+    @Override
+    public void execute(JobExecution execution) {
+        JobParameters jobParameters = execution.getJobParameters();
+        String inputFile = jobParameters.getString("input.file");
+        System.out.println("processing billing information from file " + inputFile);
+        execution.setStatus(BatchStatus.COMPLETED);
+        execution.setExitStatus(ExitStatus.COMPLETED);
+        this.jobRepository.update(execution);
     }
 }
